@@ -1,6 +1,5 @@
-'use client';
-
 // Firebase Realtime Database helpers for Tech Ceylon
+// This module works on both client and server (see conditional logic in functions)
 
 import {
   ref,

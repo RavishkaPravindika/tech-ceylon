@@ -45,7 +45,7 @@ export const useCartStore = create<CartStore>()(
                 discountPrice: product.discountPrice,
                 quantity: newQty,
                 subtotal: effectivePrice * newQty,
-                image: product.images[0],
+                image: (product.images && product.images.length > 0) ? product.images[0] : undefined,
                 slug: product.slug,
               },
             },
