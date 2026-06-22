@@ -1,0 +1,59 @@
+{
+  "products": {
+    "$productId": {
+      ".validate": "newData.hasChildren(['productId', 'name', 'slug', 'price', 'status', 'categoryId'])"
+    }
+  },
+  "categories": {
+    "$categoryId": {
+      ".validate": "newData.hasChildren(['categoryId', 'name', 'slug', 'status'])"
+    }
+  },
+  "rules": {
+    "users": {
+      "$uid": {
+        ".read": "$uid === auth.uid || root.child('admins').child(auth.uid).exists()",
+        ".write": "$uid === auth.uid || root.child('admins').child(auth.uid).child('role').val() === 'SUPER_ADMIN'"
+      }
+    },
+    "admins": {
+      ".read": "root.child('admins').child(auth.uid).exists()",
+      "$uid": {
+        ".write": "root.child('admins').child(auth.uid).child('role').val() === 'SUPER_ADMIN'"
+      }
+    },
+    "products": {
+      ".read": true,
+      ".write": "root.child('admins').child(auth.uid).exists()"
+    },
+    "categories": {
+      ".read": true,
+      ".write": "root.child('admins').child(auth.uid).exists()"
+    },
+    "orders": {
+      ".read": "root.child('admins').child(auth.uid).exists()",
+      "$orderId": {
+        ".read": "auth != null && (data.child('userId').val() === auth.uid || root.child('admins').child(auth.uid).exists())",
+        ".write": "auth != null"
+      }
+    },
+    "carts": {
+      "$uid": {
+        ".read": "$uid === auth.uid",
+        ".write": "$uid === auth.uid"
+      }
+    },
+    "logs": {
+      ".read": "root.child('admins').child(auth.uid).child('role').val() === 'SUPER_ADMIN'",
+      ".write": "auth != null"
+    },
+    "settings": {
+      ".read": true,
+      ".write": "root.child('admins').child(auth.uid).child('role').val() === 'SUPER_ADMIN'"
+    },
+    "analytics": {
+      ".read": "root.child('admins').child(auth.uid).exists()",
+      ".write": true
+    }
+  }
+}
