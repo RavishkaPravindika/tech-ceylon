@@ -138,6 +138,43 @@ export default function AdminSettingsPage() {
         ))}
       </div>
 
+      {/* Hero Stats */}
+      <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-2xl p-6 space-y-5">
+        <h2 className="font-semibold text-[var(--text-primary)]">Homepage Hero Stats</h2>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Stat 1 Label</label>
+            <input value={settings.heroStat1Label || ''} onChange={(e) => update('heroStat1Label', e.target.value)}
+              className="w-full px-3 py-2 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-lg text-sm focus:outline-none focus:border-blue-500" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Stat 1 Value</label>
+            <input value={settings.heroStat1Value || ''} onChange={(e) => update('heroStat1Value', e.target.value)}
+              className="w-full px-3 py-2 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-lg text-sm focus:outline-none focus:border-blue-500" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Stat 2 Label</label>
+            <input value={settings.heroStat2Label || ''} onChange={(e) => update('heroStat2Label', e.target.value)}
+              className="w-full px-3 py-2 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-lg text-sm focus:outline-none focus:border-blue-500" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Stat 2 Value</label>
+            <input value={settings.heroStat2Value || ''} onChange={(e) => update('heroStat2Value', e.target.value)}
+              className="w-full px-3 py-2 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-lg text-sm focus:outline-none focus:border-blue-500" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Stat 3 Label</label>
+            <input value={settings.heroStat3Label || ''} onChange={(e) => update('heroStat3Label', e.target.value)}
+              className="w-full px-3 py-2 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-lg text-sm focus:outline-none focus:border-blue-500" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Stat 3 Value</label>
+            <input value={settings.heroStat3Value || ''} onChange={(e) => update('heroStat3Value', e.target.value)}
+              className="w-full px-3 py-2 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-lg text-sm focus:outline-none focus:border-blue-500" />
+          </div>
+        </div>
+      </div>
+
       {/* Save Button */}
       <button onClick={handleSave} id="save-settings" disabled={isSaving}
         className="flex items-center gap-2 px-8 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-semibold rounded-xl transition-all shadow-lg">

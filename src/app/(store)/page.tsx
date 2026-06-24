@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { ArrowRight, Shield, Truck, MessageCircle, Zap, Star } from 'lucide-react';
 import { getActiveProducts, getFeaturedProducts } from '@/lib/services/products.service';
 import { getActiveCategories } from '@/lib/services/categories.service';
+import { getSettings } from '@/lib/services/settings.service';
+import { AppSettings, DEFAULT_SETTINGS } from '@/types/settings.types';
 import { ProductCard } from '@/components/store/ProductCard';
 import { ROUTES } from '@/lib/constants/routes';
 import { APP_NAME } from '@/lib/constants/config';
@@ -49,12 +51,14 @@ export default async function HomePage() {
   // Fetch data server-side
   let featured: Awaited<ReturnType<typeof getFeaturedProducts>> = [];
   let categories: Awaited<ReturnType<typeof getActiveCategories>> = [];
+  let settings: AppSettings = DEFAULT_SETTINGS;
 
   try {
-    [featured, categories] = await Promise.all([
+    [featured, categories, settings] = await Promise.all([
       getFeaturedProducts(8),
       getActiveCategories(),
-    ]);
+      getSettings(),
+    ]) as [Awaited<ReturnType<typeof getFeaturedProducts>>, Awaited<ReturnType<typeof getActiveCategories>>, AppSettings];
   } catch {
     // Firebase not configured — show empty state gracefully
   }
@@ -119,9 +123,9 @@ export default async function HomePage() {
           {/* Stats */}
           <div className="mt-16 grid grid-cols-3 gap-8 max-w-md mx-auto animate-fade-in">
             {[
-              { label: 'Products', value: '200+' },
-              { label: 'Happy Customers', value: '1K+' },
-              { label: 'Categories', value: categories.length || '10+' },
+              { label: settings.heroStat1Label || 'Products', value: settings.heroStat1Value || '200+' },
+              { label: settings.heroStat2Label || 'Happy Customers', value: settings.heroStat2Value || '1K+' },
+              { label: settings.heroStat3Label || 'Categories', value: settings.heroStat3Value || '10+' },
             ].map((stat) => (
               <div key={stat.label} className="text-center">
                 <div className="text-2xl font-bold text-white">{stat.value}</div>

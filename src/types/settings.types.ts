@@ -13,6 +13,12 @@ export interface AppSettings {
   lowStockThreshold: number;
   currency: string;
   currencyCode: string;
+  heroStat1Label: string;
+  heroStat1Value: string;
+  heroStat2Label: string;
+  heroStat2Value: string;
+  heroStat3Label: string;
+  heroStat3Value: string;
   updatedAt?: number;
   updatedBy?: string;
 }
@@ -30,4 +36,10 @@ export const DEFAULT_SETTINGS: AppSettings = {
   lowStockThreshold: 5,
   currency: 'Rs.',
   currencyCode: 'LKR',
+  heroStat1Label: 'Products',
+  heroStat1Value: '200+',
+  heroStat2Label: 'Happy Customers',
+  heroStat2Value: '1K+',
+  heroStat3Label: 'Categories',
+  heroStat3Value: '10+',
 };
