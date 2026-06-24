@@ -123,12 +123,14 @@ export async function seedSuperAdmin(uid: string, name: string, email: string): 
  * Log admin login event
  */
 export async function logAdminLogin(uid: string, name: string): Promise<void> {
+  const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown';
   await createLog({
     userId: uid,
     userName: name,
     action: 'admin:login',
     entity: 'admin',
     entityId: uid,
+    details: { userAgent },
   });
 }
 

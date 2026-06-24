@@ -62,12 +62,14 @@ export async function getAllUsers(): Promise<User[]> {
  * Log user login event
  */
 export async function logUserLogin(uid: string, name: string): Promise<void> {
+  const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown';
   await createLog({
     userId: uid,
     userName: name,
     action: 'user:login',
     entity: 'user',
     entityId: uid,
+    details: { userAgent },
   });
 }
 

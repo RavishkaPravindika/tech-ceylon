@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Package, Tag, ShoppingBag, Users, Shield, TrendingUp, AlertTriangle, Plus, ArrowRight, Clock } from 'lucide-react';
+import { Package, Tag, ShoppingBag, Users, Shield, TrendingUp, AlertTriangle, Plus, ArrowRight, Clock, Globe } from 'lucide-react';
 import { getAllProducts, getLowStockProducts } from '@/lib/services/products.service';
 import { getAllCategories } from '@/lib/services/categories.service';
 import { getAllOrders, getRecentOrders, getOrdersPerMonth } from '@/lib/services/orders.service';
 import { getAllUsers } from '@/lib/services/users.service';
 import { getAllAdmins } from '@/lib/services/admins.service';
 import { getRecentLogs } from '@/lib/services/logs.service';
+import { getAllSiteVisits, getRecentSiteVisits, SiteVisit } from '@/lib/services/analytics.service';
 import { formatPrice, formatDateTime } from '@/lib/utils/formatters';
 import { ROUTES } from '@/lib/constants/routes';
 import { ORDER_STATUSES } from '@/lib/constants/config';
@@ -26,6 +27,7 @@ interface DashboardStats {
   orders: number;
   users: number;
   admins: number;
+  visits: number;
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -42,12 +44,13 @@ export default function AdminDashboard() {
   const [lowStock, setLowStock] = useState<Product[]>([]);
   const [ordersChart, setOrdersChart] = useState<{ month: string; orders: number; revenue: number }[]>([]);
   const [recentLogs, setRecentLogs] = useState<Log[]>([]);
+  const [recentVisits, setRecentVisits] = useState<SiteVisit[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     async function fetchData() {
       try {
-        const [products, categories, orders, users, admins, recent, lowStockItems, chartData, logs] = await Promise.all([
+        const [products, categories, orders, users, admins, recent, lowStockItems, chartData, logs, allVisits, recentVisitsData] = await Promise.all([
           getAllProducts(),
           getAllCategories(),
           getAllOrders(),
@@ -57,6 +60,8 @@ export default function AdminDashboard() {
           getLowStockProducts(),
           getOrdersPerMonth(),
           getRecentLogs(5),
+          getAllSiteVisits(),
+          getRecentSiteVisits(10),
         ]);
 
         setStats({
@@ -65,11 +70,13 @@ export default function AdminDashboard() {
           orders: orders.length,
           users: users.length,
           admins: admins.length,
+          visits: allVisits.length,
         });
         setRecentOrders(recent);
         setLowStock(lowStockItems);
         setOrdersChart(chartData);
         setRecentLogs(logs);
+        setRecentVisits(recentVisitsData);
       } catch (err) {
         console.error('Dashboard data error:', err);
       } finally {
@@ -80,6 +87,7 @@ export default function AdminDashboard() {
   }, []);
 
   const STAT_CARDS = [
+    { label: 'Site Visits', value: stats.visits, icon: Globe, color: 'text-sky-600', bg: 'bg-sky-50 dark:bg-sky-950/30', href: '#' },
     { label: 'Total Products', value: stats.products, icon: Package, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-950/30', href: ROUTES.ADMIN_PRODUCTS },
     { label: 'Categories', value: stats.categories, icon: Tag, color: 'text-purple-600', bg: 'bg-purple-50 dark:bg-purple-950/30', href: ROUTES.ADMIN_CATEGORIES },
     { label: 'Total Orders', value: stats.orders, icon: ShoppingBag, color: 'text-green-600', bg: 'bg-green-50 dark:bg-green-950/30', href: ROUTES.ADMIN_ORDERS },
@@ -106,7 +114,7 @@ export default function AdminDashboard() {
   return (
     <div className="space-y-6">
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         {STAT_CARDS.map(({ label, value, icon: Icon, color, bg, href }) => (
           <Link
             key={label}
@@ -261,6 +269,50 @@ export default function AdminDashboard() {
                 <p className="text-xs text-[var(--text-muted)] shrink-0">{formatDateTime(log.timestamp)}</p>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Recent Site Visits */}
+      {recentVisits.length > 0 && (
+        <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-2xl overflow-hidden mt-6">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border-color)]">
+            <h3 className="font-semibold text-[var(--text-primary)]">Recent Site Visits</h3>
+            <div className="text-xs text-[var(--text-muted)] flex items-center gap-1">
+              <Globe size={12} /> Last {recentVisits.length} visits
+            </div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-[var(--bg-secondary)]">
+                  <th className="text-left px-6 py-3 text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">Device</th>
+                  <th className="text-left px-6 py-3 text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">Path Visited</th>
+                  <th className="text-left px-6 py-3 text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">Time</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[var(--border-color)]">
+                {recentVisits.map((visit) => {
+                  // A very basic parser to make userAgent look cleaner
+                  const isMobile = visit.userAgent.includes('Mobile');
+                  const osMatch = visit.userAgent.match(/\(([^)]+)\)/);
+                  const os = osMatch ? osMatch[1].split(';')[0] : 'Unknown OS';
+                  const deviceLabel = `${isMobile ? '📱 Mobile' : '💻 Desktop'} - ${os}`;
+
+                  return (
+                    <tr key={visit.visitId} className="hover:bg-[var(--bg-secondary)] transition-colors">
+                      <td className="px-6 py-4">
+                        <p className="font-medium text-[var(--text-primary)] text-xs line-clamp-1 max-w-[200px]" title={visit.userAgent}>
+                          {deviceLabel}
+                        </p>
+                      </td>
+                      <td className="px-6 py-4 font-mono text-xs text-blue-600">{visit.path}</td>
+                      <td className="px-6 py-4 text-xs text-[var(--text-muted)]">{formatDateTime(visit.timestamp)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
