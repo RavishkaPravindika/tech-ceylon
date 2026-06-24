@@ -1,87 +1,58 @@
 'use client';
 
-// Firebase Storage helpers for Tech Ceylon
+// Deprecated Firebase Storage helpers
+// These are now wrappers around the new upload service which uses ImgBB
 
-import {
-  ref,
-  uploadBytesResumable,
-  getDownloadURL,
-  deleteObject,
-  UploadTaskSnapshot,
-} from 'firebase/storage';
 import { getFirebaseStorage } from './config';
+import { ref } from 'firebase/storage';
+import {
+  uploadFile as imgbbUploadFile,
+  uploadProductImage as imgbbUploadProductImage,
+  uploadCategoryImage as imgbbUploadCategoryImage,
+  deleteFileByURL as imgbbDeleteFileByURL,
+  IUploadProgress
+} from '../services/upload.service';
 
-export interface UploadProgress {
-  progress: number;
-  bytesTransferred: number;
-  totalBytes: number;
-}
+export type UploadProgress = IUploadProgress;
 
 /**
- * Upload a file to Firebase Storage with progress tracking
+ * Upload a file (Delegates to ImgBB)
  */
 export function uploadFile(
   file: File,
   path: string,
   onProgress?: (progress: UploadProgress) => void
 ): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const storage = getFirebaseStorage();
-    const storageRef = ref(storage, path);
-    const uploadTask = uploadBytesResumable(storageRef, file);
-
-    uploadTask.on(
-      'state_changed',
-      (snapshot: UploadTaskSnapshot) => {
-        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-        onProgress?.({
-          progress,
-          bytesTransferred: snapshot.bytesTransferred,
-          totalBytes: snapshot.totalBytes,
-        });
-      },
-      (error) => reject(error),
-      async () => {
-        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-        resolve(downloadURL);
-      }
-    );
-  });
+  return imgbbUploadFile(file, path, onProgress);
 }
 
 /**
- * Upload a product image and return the download URL
+ * Upload a product image (Delegates to ImgBB)
  */
 export async function uploadProductImage(
   file: File,
   productId: string,
   onProgress?: (progress: UploadProgress) => void
 ): Promise<string> {
-  const ext = file.name.split('.').pop();
-  const path = `products/${productId}/${Date.now()}.${ext}`;
-  return uploadFile(file, path, onProgress);
+  return imgbbUploadProductImage(file, productId, onProgress);
 }
 
 /**
- * Upload a category image and return the download URL
+ * Upload a category image (Delegates to ImgBB)
  */
 export async function uploadCategoryImage(
   file: File,
   categoryId: string,
   onProgress?: (progress: UploadProgress) => void
 ): Promise<string> {
-  const ext = file.name.split('.').pop();
-  const path = `categories/${categoryId}/${Date.now()}.${ext}`;
-  return uploadFile(file, path, onProgress);
+  return imgbbUploadCategoryImage(file, categoryId, onProgress);
 }
 
 /**
- * Delete a file from Firebase Storage by URL
+ * Delete a file (Delegates to ImgBB)
  */
 export async function deleteFileByURL(url: string): Promise<void> {
-  const storage = getFirebaseStorage();
-  const storageRef = ref(storage, url);
-  await deleteObject(storageRef);
+  return imgbbDeleteFileByURL(url);
 }
 
 /**
