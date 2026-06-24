@@ -5,6 +5,7 @@ import { dbSet, dbGet, dbGetAll, dbUpdate, dbDelete, dbQueryByChild, serverTimes
 import { Product, ProductFormData, ProductFilters, ProductStatus } from '@/types/product.types';
 import { generateSlug } from '@/lib/utils/slugify';
 import { createLog } from './logs.service';
+import { getSettings } from './settings.service';
 
 const PRODUCTS_PATH = 'products';
 
@@ -61,9 +62,7 @@ export async function updateProduct(
     updatedBy,
   };
 
-  if (data.name) {
-    updates.slug = generateSlug(data.name);
-  }
+  // We deliberately do not update the slug here to preserve existing product links for SEO and bookmarks.
 
   await dbUpdate(`${PRODUCTS_PATH}/${productId}`, updates as Record<string, unknown>);
 
@@ -136,7 +135,13 @@ export async function getAllProducts(): Promise<Product[]> {
  */
 export async function getActiveProducts(): Promise<Product[]> {
   const all = await getAllProducts();
-  return all.filter((p) => p.status === 'active');
+  const settings = await getSettings();
+  
+  return all.filter((p) => {
+    if (p.status !== 'active') return false;
+    if (!settings.showOutOfStockProducts && p.stockQuantity <= 0) return false;
+    return true;
+  });
 }
 
 /**
