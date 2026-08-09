@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { CartDrawer } from '@/components/store/CartDrawer';
-import { GoogleOneTap } from '@/components/auth/GoogleOneTap';
 import { SiteTracker } from '@/components/store/SiteTracker';
 import { getSettings } from '@/lib/services/settings.service';
 import { Wrench } from 'lucide-react';
@@ -44,7 +43,6 @@ export default async function StoreLayout({ children }: { children: React.ReactN
       <main className="min-h-screen">{children}</main>
       <Footer />
       <CartDrawer />
-      <GoogleOneTap />
     </>
   );
 }
