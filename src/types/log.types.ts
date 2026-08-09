@@ -41,7 +41,16 @@ export interface Log {
   entityName?: string;
   description?: string;
   timestamp: number;
-  ipAddress?: string;
+  /** Public IP address (populated for login/logout events) */
+  ip?: string;
+  /** Country derived from IP */
+  country?: string;
+  /** Parsed device info (populated for login/logout events) */
+  device?: {
+    type: string;
+    os: string;
+    browser: string;
+  };
   details?: Record<string, unknown>;
 }
 

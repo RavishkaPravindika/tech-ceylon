@@ -1,11 +1,18 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Search, Filter } from 'lucide-react';
+import Link from 'next/link';
+import { Search, Globe } from 'lucide-react';
 import { getAllLogs } from '@/lib/services/logs.service';
 import { Log, LogAction } from '@/types/log.types';
 import { formatDateTime, getInitials, stringToColor } from '@/lib/utils/formatters';
+import { ROUTES } from '@/lib/constants/routes';
 
+
+/** Login/logout events are shown in the Site Visits page, not here */
+const LOGIN_LOGOUT_ACTIONS: LogAction[] = [
+  'user:login', 'user:logout', 'admin:login', 'admin:logout',
+];
 
 const ACTION_COLORS: Record<string, string> = {
   CREATE: 'bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-400',
@@ -24,7 +31,13 @@ export default function AdminLogsPage() {
 
   useEffect(() => {
     getAllLogs()
-      .then((l) => setLogs(l.sort((a, b) => b.timestamp - a.timestamp)))
+      .then((l) => {
+        // Exclude login/logout — those appear in the Site Visits page
+        const activity = l
+          .filter((log) => !LOGIN_LOGOUT_ACTIONS.includes(log.action))
+          .sort((a, b) => b.timestamp - a.timestamp);
+        setLogs(activity);
+      })
       .catch(() => {})
       .finally(() => setIsLoading(false));
   }, []);
@@ -44,6 +57,17 @@ export default function AdminLogsPage() {
 
   return (
     <div className="space-y-6">
+      {/* Header note */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-[var(--text-primary)]">Activity Logs</h1>
+          <p className="text-sm text-[var(--text-muted)] mt-0.5">All system activity excluding login / logout events</p>
+        </div>
+        <Link href={ROUTES.ADMIN_VISITS} className="flex items-center gap-1.5 text-xs text-blue-600 hover:underline">
+          <Globe size={13} /> View Logins &amp; Visits
+        </Link>
+      </div>
+
       {/* Toolbar */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">

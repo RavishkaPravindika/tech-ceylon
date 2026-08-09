@@ -63,6 +63,24 @@ export function parseDevice(ua: string): DeviceInfo {
 }
 
 /**
+ * Fetch the visitor's public IP and country from ipapi.co.
+ * Best-effort: returns 'Unknown' values on any failure.
+ * Shared by recordSiteVisit, logUserLogin, logAdminLogin, etc.
+ */
+export async function fetchIpInfo(): Promise<{ ip: string; country: string }> {
+  try {
+    const res = await fetch('https://ipapi.co/json/', { signal: AbortSignal.timeout(3000) });
+    if (res.ok) {
+      const data = await res.json();
+      return { ip: data.ip || 'Unknown', country: data.country_name || 'Unknown' };
+    }
+  } catch {
+    // Silently fail
+  }
+  return { ip: 'Unknown', country: 'Unknown' };
+}
+
+/**
  * Record a unique site visit.
  * @param path     - Current URL path
  * @param userId   - Firebase UID if logged in, omit or pass undefined for guests
@@ -78,20 +96,7 @@ export async function recordSiteVisit(
     const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown';
     const referrer = typeof document !== 'undefined' ? document.referrer : '';
     const device = parseDevice(userAgent);
-
-    // Fetch public IP and country (best-effort, never block the visit on failure)
-    let ip = 'Unknown';
-    let country = 'Unknown';
-    try {
-      const ipRes = await fetch('https://ipapi.co/json/', { signal: AbortSignal.timeout(3000) });
-      if (ipRes.ok) {
-        const ipData = await ipRes.json();
-        ip = ipData.ip || 'Unknown';
-        country = ipData.country_name || 'Unknown';
-      }
-    } catch {
-      // IP fetch failed silently — don't block the visit record
-    }
+    const { ip, country } = await fetchIpInfo();
 
     const visit: SiteVisit = {
       visitId,

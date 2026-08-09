@@ -3,6 +3,7 @@
 import { dbSet, dbGet, dbGetAll, dbUpdate, serverTimestamp } from '@/lib/firebase/db';
 import { User } from '@/types/user.types';
 import { createLog } from './logs.service';
+import { fetchIpInfo, parseDevice } from './analytics.service';
 
 const USERS_PATH = 'users';
 
@@ -59,30 +60,39 @@ export async function getAllUsers(): Promise<User[]> {
 }
 
 /**
- * Log user login event
+ * Log user login event — captures device, IP, and country
  */
 export async function logUserLogin(uid: string, name: string): Promise<void> {
   const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown';
+  const device = parseDevice(userAgent);
+  const { ip, country } = await fetchIpInfo();
   await createLog({
     userId: uid,
     userName: name,
     action: 'user:login',
     entity: 'user',
     entityId: uid,
+    ip,
+    country,
+    device,
     details: { userAgent },
   });
 }
 
 /**
- * Log user logout event
+ * Log user logout event — captures device info
  */
 export async function logUserLogout(uid: string, name: string): Promise<void> {
+  const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown';
+  const device = parseDevice(userAgent);
   await createLog({
     userId: uid,
     userName: name,
     action: 'user:logout',
     entity: 'user',
     entityId: uid,
+    device,
+    details: { userAgent },
   });
 }
 

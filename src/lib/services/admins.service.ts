@@ -3,6 +3,7 @@
 import { dbSet, dbGet, dbGetAll, dbDelete, serverTimestamp } from '@/lib/firebase/db';
 import { Admin, AdminFormData, AdminRole, SUPER_ADMIN_EMAIL } from '@/types/admin.types';
 import { createLog } from './logs.service';
+import { fetchIpInfo, parseDevice } from './analytics.service';
 
 const ADMINS_PATH = 'admins';
 
@@ -120,29 +121,38 @@ export async function seedSuperAdmin(uid: string, name: string, email: string): 
 }
 
 /**
- * Log admin login event
+ * Log admin login event — captures device, IP, and country
  */
 export async function logAdminLogin(uid: string, name: string): Promise<void> {
   const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown';
+  const device = parseDevice(userAgent);
+  const { ip, country } = await fetchIpInfo();
   await createLog({
     userId: uid,
     userName: name,
     action: 'admin:login',
     entity: 'admin',
     entityId: uid,
+    ip,
+    country,
+    device,
     details: { userAgent },
   });
 }
 
 /**
- * Log admin logout event
+ * Log admin logout event — captures device info
  */
 export async function logAdminLogout(uid: string, name: string): Promise<void> {
+  const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown';
+  const device = parseDevice(userAgent);
   await createLog({
     userId: uid,
     userName: name,
     action: 'admin:logout',
     entity: 'admin',
     entityId: uid,
+    device,
+    details: { userAgent },
   });
 }

@@ -15,6 +15,9 @@ interface CreateLogParams {
   entity: LogEntity;
   entityId?: string;
   details?: Record<string, unknown>;
+  ip?: string;
+  country?: string;
+  device?: { type: string; os: string; browser: string };
 }
 
 /**
@@ -32,6 +35,9 @@ export async function createLog(params: CreateLogParams): Promise<void> {
       entityId: params.entityId || '',
       timestamp: serverTimestamp(),
       details: params.details || {},
+      ...(params.ip      && { ip: params.ip }),
+      ...(params.country && { country: params.country }),
+      ...(params.device  && { device: params.device }),
     };
     await dbSet(`${LOGS_PATH}/${logId}`, log);
   } catch (error) {
