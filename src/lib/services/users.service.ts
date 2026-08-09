@@ -20,14 +20,16 @@ export async function upsertUser(userData: {
   const now = serverTimestamp();
 
   if (existing) {
-    // Update last login
+    // Preserve the user's custom name — only refresh photo and lastLoginAt
     const updated: User = {
       ...existing,
-      name: userData.name,
       photoURL: userData.photoURL,
       lastLoginAt: now,
     };
-    await dbUpdate(`${USERS_PATH}/${userData.uid}`, { lastLoginAt: now, name: userData.name, photoURL: userData.photoURL });
+    await dbUpdate(`${USERS_PATH}/${userData.uid}`, {
+      lastLoginAt: now,
+      photoURL: userData.photoURL,
+    });
     return updated;
   } else {
     // Create new user
@@ -49,6 +51,13 @@ export async function upsertUser(userData: {
  */
 export async function getUserById(uid: string): Promise<User | null> {
   return dbGet<User>(`${USERS_PATH}/${uid}`);
+}
+
+/**
+ * Update a user's display name
+ */
+export async function updateUserName(uid: string, name: string): Promise<void> {
+  await dbUpdate(`${USERS_PATH}/${uid}`, { name });
 }
 
 /**

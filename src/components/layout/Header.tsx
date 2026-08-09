@@ -5,7 +5,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ShoppingCart, Search, Sun, Moon, Menu, X, ChevronDown } from 'lucide-react';
+import { ShoppingCart, Search, Sun, Moon, Menu, X, ChevronDown, UserCircle } from 'lucide-react';
 import { ROUTES } from '@/lib/constants/routes';
 import { useCartStore } from '@/store/cartStore';
 import { useUIStore } from '@/store/uiStore';
@@ -157,6 +157,13 @@ export function Header() {
                           </p>
                         </div>
                         <div className="p-1">
+                          <Link
+                            href={ROUTES.PROFILE}
+                            onClick={() => setUserMenuOpen(false)}
+                            className="flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] rounded-lg transition-all"
+                          >
+                            <UserCircle size={15} /> My Profile
+                          </Link>
                           <Link
                             href={ROUTES.CART}
                             onClick={() => setUserMenuOpen(false)}
