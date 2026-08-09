@@ -22,6 +22,7 @@ export const ROUTES = {
   ADMIN_ORDERS: '/admin/orders',
   ADMIN_ADMINS: '/admin/admins',
   ADMIN_LOGS: '/admin/logs',
+  ADMIN_VISITS: '/admin/visits',
   ADMIN_SETTINGS: '/admin/settings',
 } as const;
 
@@ -33,7 +34,8 @@ export const PROTECTED_ADMIN_ROUTES = [
   '/admin/orders',
   '/admin/admins',
   '/admin/logs',
+  '/admin/visits',
   '/admin/settings',
 ];
 
-export const SUPER_ADMIN_ONLY_ROUTES = ['/admin/admins', '/admin/logs', '/admin/settings'];
+export const SUPER_ADMIN_ONLY_ROUTES = ['/admin/admins', '/admin/logs', '/admin/visits', '/admin/settings'];

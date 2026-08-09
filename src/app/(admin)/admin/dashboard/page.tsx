@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Package, Tag, ShoppingBag, Users, Shield, TrendingUp, AlertTriangle, Plus, ArrowRight, Clock, Globe } from 'lucide-react';
-import { UAParser } from 'ua-parser-js';
 import { getAllProducts, getLowStockProducts } from '@/lib/services/products.service';
 import { getAllCategories } from '@/lib/services/categories.service';
 import { getAllOrders, getRecentOrders, getOrdersPerMonth } from '@/lib/services/orders.service';
@@ -62,7 +61,7 @@ export default function AdminDashboard() {
           getOrdersPerMonth(),
           getRecentLogs(5),
           getAllSiteVisits(),
-          getRecentSiteVisits(10),
+          getRecentSiteVisits(3),
         ]);
 
         setStats({
@@ -88,7 +87,7 @@ export default function AdminDashboard() {
   }, []);
 
   const STAT_CARDS = [
-    { label: 'Site Visits', value: stats.visits, icon: Globe, color: 'text-sky-600', bg: 'bg-sky-50 dark:bg-sky-950/30', href: '#' },
+    { label: 'Site Visits', value: stats.visits, icon: Globe, color: 'text-sky-600', bg: 'bg-sky-50 dark:bg-sky-950/30', href: ROUTES.ADMIN_VISITS },
     { label: 'Total Products', value: stats.products, icon: Package, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-950/30', href: ROUTES.ADMIN_PRODUCTS },
     { label: 'Categories', value: stats.categories, icon: Tag, color: 'text-purple-600', bg: 'bg-purple-50 dark:bg-purple-950/30', href: ROUTES.ADMIN_CATEGORIES },
     { label: 'Total Orders', value: stats.orders, icon: ShoppingBag, color: 'text-green-600', bg: 'bg-green-50 dark:bg-green-950/30', href: ROUTES.ADMIN_ORDERS },
@@ -279,53 +278,35 @@ export default function AdminDashboard() {
         <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-2xl overflow-hidden mt-6">
           <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border-color)]">
             <h3 className="font-semibold text-[var(--text-primary)]">Recent Site Visits</h3>
-            <div className="text-xs text-[var(--text-muted)] flex items-center gap-1">
-              <Globe size={12} /> Last {recentVisits.length} visits
-            </div>
+            <Link href={ROUTES.ADMIN_VISITS} className="text-xs text-blue-600 flex items-center gap-1 hover:gap-2 transition-all">
+              All Visits <ArrowRight size={12} />
+            </Link>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-[var(--bg-secondary)]">
-                  <th className="text-left px-6 py-3 text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">Device</th>
-                  <th className="text-left px-6 py-3 text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">Path Visited</th>
-                  <th className="text-left px-6 py-3 text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">Time</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[var(--border-color)]">
-                {recentVisits.map((visit) => {
-                  const parser = new UAParser(visit.userAgent || '');
-                  const device = parser.getDevice();
-                  const os = parser.getOS();
-                  const browser = parser.getBrowser();
-                  
-                  const isMobile = device.type === 'mobile' || device.type === 'tablet' || device.type === 'wearable';
-                  const deviceIcon = device.type === 'tablet' ? '📱 Tablet' : isMobile ? '📱 Mobile' : '💻 Desktop';
-                  
-                  // Build a detailed label for mobile (e.g., Apple iPhone)
-                  let mobileDetails = '';
-                  if (isMobile && (device.vendor || device.model)) {
-                    mobileDetails = [device.vendor, device.model].filter(Boolean).join(' ');
-                  }
-                  
-                  const deviceLabel = mobileDetails 
-                    ? `${deviceIcon} (${mobileDetails}) • ${os.name || 'Unknown OS'} • ${browser.name || 'Unknown Browser'}`
-                    : `${deviceIcon} • ${os.name || 'Unknown OS'} • ${browser.name || 'Unknown Browser'}`;
-
-                  return (
-                    <tr key={visit.visitId} className="hover:bg-[var(--bg-secondary)] transition-colors">
-                      <td className="px-6 py-4">
-                        <p className="font-medium text-[var(--text-primary)] text-xs line-clamp-1 max-w-[200px]" title={visit.userAgent}>
-                          {deviceLabel}
-                        </p>
-                      </td>
-                      <td className="px-6 py-4 font-mono text-xs text-blue-600">{visit.path}</td>
-                      <td className="px-6 py-4 text-xs text-[var(--text-muted)]">{formatDateTime(visit.timestamp)}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+          <div className="divide-y divide-[var(--border-color)]">
+            {recentVisits.map((visit) => (
+              <div key={visit.visitId} className="px-6 py-3.5 flex items-center gap-4">
+                {/* Visitor */}
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
+                  (visit.userId ?? 'guest') === 'guest'
+                    ? 'bg-gray-100 dark:bg-gray-800 text-gray-500'
+                    : 'bg-blue-100 dark:bg-blue-950/50 text-blue-600'
+                }`}>
+                  {(visit.userId ?? 'guest') === 'guest' ? '?' : (visit.userName ?? 'User').charAt(0).toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-[var(--text-primary)]">
+                    {visit.userName ?? 'Guest'}
+                    <span className="ml-2 font-mono text-xs text-blue-600">{visit.path}</span>
+                  </p>
+                  <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                    {visit.device?.type ?? 'Desktop'} · {visit.device?.browser ?? 'Unknown'} · {visit.device?.os ?? ''}
+                    {visit.ip && visit.ip !== 'Unknown' && ` · ${visit.ip}`}
+                    {visit.country && visit.country !== 'Unknown' && ` (${visit.country})`}
+                  </p>
+                </div>
+                <p className="text-xs text-[var(--text-muted)] shrink-0">{formatDateTime(visit.timestamp)}</p>
+              </div>
+            ))}
           </div>
         </div>
       )}

@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Package, Tag, ShoppingBag, Users, Shield,
-  ScrollText, Settings, ChevronLeft, ChevronRight, LogOut, ExternalLink
+  ScrollText, Settings, ChevronLeft, ChevronRight, LogOut, ExternalLink, Globe
 } from 'lucide-react';
 import { useUIStore } from '@/store/uiStore';
 import { useAuthStore } from '@/store/authStore';
@@ -20,6 +20,7 @@ const NAV_ITEMS = [
   { label: 'Orders', href: ROUTES.ADMIN_ORDERS, icon: ShoppingBag, roles: ['SUPER_ADMIN', 'ADMIN'] },
   { label: 'Admins', href: ROUTES.ADMIN_ADMINS, icon: Shield, roles: ['SUPER_ADMIN'] },
   { label: 'Logs', href: ROUTES.ADMIN_LOGS, icon: ScrollText, roles: ['SUPER_ADMIN'] },
+  { label: 'Site Visits', href: ROUTES.ADMIN_VISITS, icon: Globe, roles: ['SUPER_ADMIN'] },
   { label: 'Settings', href: ROUTES.ADMIN_SETTINGS, icon: Settings, roles: ['SUPER_ADMIN'] },
 ];
 

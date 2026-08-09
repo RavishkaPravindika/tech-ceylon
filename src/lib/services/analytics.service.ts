@@ -5,29 +5,105 @@ import { dbSet, dbGetAll, serverTimestamp } from '@/lib/firebase/db';
 
 const VISITS_PATH = 'visits';
 
+export interface DeviceInfo {
+  /** 'Mobile' | 'Tablet' | 'Desktop' */
+  type: string;
+  os: string;
+  browser: string;
+}
+
 export interface SiteVisit {
   visitId: string;
+  /** Raw User-Agent string */
   userAgent: string;
+  /** Parsed device details */
+  device: DeviceInfo;
   referrer: string;
   path: string;
   timestamp: number;
+  /** Firebase UID of the visitor, or 'guest' for unauthenticated users */
+  userId: string;
+  /** Display name of the visitor, or 'Guest' for unauthenticated users */
+  userName: string;
+  /** Visitor's public IP address */
+  ip: string;
+  /** Country derived from IP (best-effort) */
+  country: string;
+}
+
+/** Parse device type, OS, and browser from a User-Agent string */
+export function parseDevice(ua: string): DeviceInfo {
+  // Device type
+  const isMobile = /Mobi|Android|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+  const isTablet = /iPad|Tablet|PlayBook/i.test(ua) || (isMobile && /Android/i.test(ua) && !/Mobile/i.test(ua));
+  const type = isTablet ? 'Tablet' : isMobile ? 'Mobile' : 'Desktop';
+
+  // OS
+  let os = 'Unknown';
+  if (/Windows NT 10/i.test(ua))       os = 'Windows 11/10';
+  else if (/Windows NT 6\.3/i.test(ua)) os = 'Windows 8.1';
+  else if (/Windows NT 6\.1/i.test(ua)) os = 'Windows 7';
+  else if (/Windows/i.test(ua))         os = 'Windows';
+  else if (/iPhone OS/i.test(ua))       os = 'iOS';
+  else if (/iPad.*OS/i.test(ua))        os = 'iPadOS';
+  else if (/Android/i.test(ua))         os = 'Android';
+  else if (/Mac OS X/i.test(ua))        os = 'macOS';
+  else if (/Linux/i.test(ua))           os = 'Linux';
+
+  // Browser
+  let browser = 'Unknown';
+  if (/Edg\//i.test(ua))               browser = 'Edge';
+  else if (/OPR\//i.test(ua))          browser = 'Opera';
+  else if (/SamsungBrowser/i.test(ua)) browser = 'Samsung Browser';
+  else if (/Chrome\/\d/i.test(ua))     browser = 'Chrome';
+  else if (/Firefox\/\d/i.test(ua))    browser = 'Firefox';
+  else if (/Safari\/\d/i.test(ua))     browser = 'Safari';
+
+  return { type, os, browser };
 }
 
 /**
- * Record a unique site visit
+ * Record a unique site visit.
+ * @param path     - Current URL path
+ * @param userId   - Firebase UID if logged in, omit or pass undefined for guests
+ * @param userName - Display name if logged in, omit or pass undefined for guests
  */
-export async function recordSiteVisit(path: string): Promise<boolean> {
+export async function recordSiteVisit(
+  path: string,
+  userId?: string,
+  userName?: string,
+): Promise<boolean> {
   try {
     const visitId = uuidv4();
     const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown';
     const referrer = typeof document !== 'undefined' ? document.referrer : '';
+    const device = parseDevice(userAgent);
+
+    // Fetch public IP and country (best-effort, never block the visit on failure)
+    let ip = 'Unknown';
+    let country = 'Unknown';
+    try {
+      const ipRes = await fetch('https://ipapi.co/json/', { signal: AbortSignal.timeout(3000) });
+      if (ipRes.ok) {
+        const ipData = await ipRes.json();
+        ip = ipData.ip || 'Unknown';
+        country = ipData.country_name || 'Unknown';
+      }
+    } catch {
+      // IP fetch failed silently — don't block the visit record
+    }
 
     const visit: SiteVisit = {
       visitId,
       userAgent,
+      device,
       referrer,
       path,
       timestamp: serverTimestamp() as unknown as number,
+      userId: userId || 'guest',
+      userName: userName || 'Guest',
+      ip,
+      country,
     };
 
     await dbSet(`${VISITS_PATH}/${visitId}`, visit);

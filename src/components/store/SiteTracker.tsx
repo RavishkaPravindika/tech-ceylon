@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { recordSiteVisit } from '@/lib/services/analytics.service';
+import { useAuthStore } from '@/store/authStore';
 
 const SESSION_KEY = 'site_visit_tracked';
 const STORAGE_KEY = 'site_visit_last_ts';
@@ -18,13 +19,20 @@ const VISIT_COOLDOWN_MS = 24 * 60 * 60 * 1000;
  *     within the same browser tab/session.
  *  2. localStorage + timestamp – prevents counting a new session as a
  *     fresh visit if the user was already here within the last 24 hours.
+ *
+ * Records the visitor's device info (type/OS/browser) and user identity
+ * (Firebase UID + name for logged-in users, 'guest'/'Guest' for anonymous).
  */
 export function SiteTracker() {
   const pathname = usePathname();
+  const { user, isLoading } = useAuthStore();
 
   useEffect(() => {
     // Only run in the browser
     if (typeof window === 'undefined') return;
+
+    // Wait for Firebase auth to resolve so we know who the visitor is
+    if (isLoading) return;
 
     // Layer 1: already tracked this session (tab still open / refreshed)
     if (sessionStorage.getItem(SESSION_KEY)) return;
@@ -43,13 +51,17 @@ export function SiteTracker() {
     sessionStorage.setItem(SESSION_KEY, 'true');
     localStorage.setItem(STORAGE_KEY, String(Date.now()));
 
-    recordSiteVisit(pathname || '/').catch(() => {
+    // Pass user identity — logged-in user or anonymous guest
+    const userId = user?.uid;
+    const userName = user?.name;
+
+    recordSiteVisit(pathname || '/', userId, userName).catch(() => {
       // Roll back the localStorage timestamp so we retry next visit
       localStorage.removeItem(STORAGE_KEY);
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Run once on mount only – refreshes don't trigger a new mount
+  }, [isLoading, user, pathname]); // re-run once auth resolves
 
   // This component doesn't render anything
   return null;
 }
+
