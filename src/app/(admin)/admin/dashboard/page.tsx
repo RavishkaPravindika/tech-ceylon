@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Package, Tag, ShoppingBag, Users, Shield, TrendingUp, AlertTriangle, Plus, ArrowRight, Clock, Globe } from 'lucide-react';
+import { UAParser } from 'ua-parser-js';
 import { getAllProducts, getLowStockProducts } from '@/lib/services/products.service';
 import { getAllCategories } from '@/lib/services/categories.service';
 import { getAllOrders, getRecentOrders, getOrdersPerMonth } from '@/lib/services/orders.service';
@@ -39,7 +40,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function AdminDashboard() {
-  const [stats, setStats] = useState<DashboardStats>({ products: 0, categories: 0, orders: 0, users: 0, admins: 0 });
+  const [stats, setStats] = useState<DashboardStats>({ products: 0, categories: 0, orders: 0, users: 0, admins: 0, visits: 0 });
   const [recentOrders, setRecentOrders] = useState<Order[]>([]);
   const [lowStock, setLowStock] = useState<Product[]>([]);
   const [ordersChart, setOrdersChart] = useState<{ month: string; orders: number; revenue: number }[]>([]);
@@ -293,11 +294,23 @@ export default function AdminDashboard() {
               </thead>
               <tbody className="divide-y divide-[var(--border-color)]">
                 {recentVisits.map((visit) => {
-                  // A very basic parser to make userAgent look cleaner
-                  const isMobile = visit.userAgent.includes('Mobile');
-                  const osMatch = visit.userAgent.match(/\(([^)]+)\)/);
-                  const os = osMatch ? osMatch[1].split(';')[0] : 'Unknown OS';
-                  const deviceLabel = `${isMobile ? '📱 Mobile' : '💻 Desktop'} - ${os}`;
+                  const parser = new UAParser(visit.userAgent || '');
+                  const device = parser.getDevice();
+                  const os = parser.getOS();
+                  const browser = parser.getBrowser();
+                  
+                  const isMobile = device.type === 'mobile' || device.type === 'tablet' || device.type === 'wearable';
+                  const deviceIcon = device.type === 'tablet' ? '📱 Tablet' : isMobile ? '📱 Mobile' : '💻 Desktop';
+                  
+                  // Build a detailed label for mobile (e.g., Apple iPhone)
+                  let mobileDetails = '';
+                  if (isMobile && (device.vendor || device.model)) {
+                    mobileDetails = [device.vendor, device.model].filter(Boolean).join(' ');
+                  }
+                  
+                  const deviceLabel = mobileDetails 
+                    ? `${deviceIcon} (${mobileDetails}) • ${os.name || 'Unknown OS'} • ${browser.name || 'Unknown Browser'}`
+                    : `${deviceIcon} • ${os.name || 'Unknown OS'} • ${browser.name || 'Unknown Browser'}`;
 
                   return (
                     <tr key={visit.visitId} className="hover:bg-[var(--bg-secondary)] transition-colors">

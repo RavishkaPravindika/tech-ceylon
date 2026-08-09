@@ -16,7 +16,7 @@ export interface SiteVisit {
 /**
  * Record a unique site visit
  */
-export async function recordSiteVisit(path: string): Promise<void> {
+export async function recordSiteVisit(path: string): Promise<boolean> {
   try {
     const visitId = uuidv4();
     const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown';
@@ -31,9 +31,11 @@ export async function recordSiteVisit(path: string): Promise<void> {
     };
 
     await dbSet(`${VISITS_PATH}/${visitId}`, visit);
+    return true;
   } catch (error) {
     // Silently fail to not interrupt user experience
     console.error('Failed to record site visit:', error);
+    return false;
   }
 }
 

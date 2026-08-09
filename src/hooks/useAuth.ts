@@ -24,17 +24,36 @@ export function useAuth() {
     const unsubscribe = onAuthChange(async (fbUser) => {
       if (fbUser) {
         setFirebaseUser(fbUser);
+
+        // Guard: onAuthChange fires on every page refresh when Firebase
+        // restores a persisted session. Only treat it as a real login
+        // (and update lastLoginAt / write a log) the first time we see
+        // this UID in the current browser session.
+        const sessionKey = `auth_synced_${fbUser.uid}`;
+        const alreadySynced = sessionStorage.getItem(sessionKey);
+
         try {
-          const userData = await upsertUser({
-            uid: fbUser.uid,
-            name: fbUser.displayName || 'User',
-            email: fbUser.email || '',
-            photoURL: fbUser.photoURL || '',
-          });
-          setUser(userData);
-          await logUserLogin(fbUser.uid, fbUser.displayName || 'User');
+          if (alreadySynced) {
+            // Session restore — just load the existing user record, no writes
+            const { getUserById } = await import('@/lib/services/users.service');
+            const existingUser = await getUserById(fbUser.uid);
+            setUser(existingUser);
+          } else {
+            // Genuine login — upsert and log, then mark the session
+            sessionStorage.setItem(sessionKey, 'true');
+            const userData = await upsertUser({
+              uid: fbUser.uid,
+              name: fbUser.displayName || 'User',
+              email: fbUser.email || '',
+              photoURL: fbUser.photoURL || '',
+            });
+            setUser(userData);
+            await logUserLogin(fbUser.uid, fbUser.displayName || 'User');
+          }
         } catch (error) {
           console.error('Failed to sync user:', error);
+          // Clear the flag so the next load retries properly
+          sessionStorage.removeItem(sessionKey);
         }
       } else {
         clearAuth();
